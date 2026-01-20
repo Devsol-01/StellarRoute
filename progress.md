@@ -69,3 +69,86 @@ StellarRoute/
 - Starting with Phase 1.1: Environment & Project Setup
 
 ---
+
+## Session 2: Phase 1.2 SDEX Indexer Development
+**Date:** Phase 1.2 implementation  
+**Phase:** M1 - Phase 1.2
+
+### Actions Taken
+1. Researched Stellar Horizon API endpoints via browser
+   - Confirmed `/offers` endpoint exists and works
+   - Documented endpoint details in `findings.md`
+   - Orderbook snapshot endpoint needs further verification
+2. Created database schema (`migrations/0001_init.sql`)
+   - Assets table with composite unique key
+   - Offers table with full offer data
+   - Proper indexes for query performance
+3. Implemented Horizon API client (`horizon/client.rs`)
+   - HTTP client using reqwest
+   - `/offers` endpoint implementation
+   - Asset parsing from Horizon JSON format
+4. Created data models
+   - `Asset` enum (Native, CreditAlphanum4, CreditAlphanum12)
+   - `Offer` struct with conversion from Horizon format
+   - Horizon response types
+5. Implemented database layer (`db/`)
+   - Connection pooling with sqlx
+   - Migration system
+   - Health check functionality
+6. Built SDEX indexer service (`sdex.rs`)
+   - Polling loop for offers
+   - Asset and offer upsert logic
+   - Error handling and logging
+7. Created main binary (`bin/stellarroute-indexer.rs`)
+   - Configuration loading
+   - Database initialization
+   - Indexer startup
+
+### Current Status
+- Database schema created ✅
+- Horizon client implemented ✅
+- Data models created ✅
+- Database layer implemented ✅
+- Indexer service implemented ✅
+- Main binary created ✅
+- Orderbook snapshot endpoint (pending verification)
+- Streaming support (pending - polling implemented first)
+- Retry logic (basic error handling done, retry pending)
+
+### Files Created/Modified
+- `crates/indexer/migrations/0001_init.sql` - Database schema
+- `crates/indexer/src/config/mod.rs` - Configuration management
+- `crates/indexer/src/models/asset.rs` - Asset model
+- `crates/indexer/src/models/horizon.rs` - Horizon response types
+- `crates/indexer/src/models/offer.rs` - Offer model
+- `crates/indexer/src/horizon/mod.rs` - Horizon module
+- `crates/indexer/src/horizon/client.rs` - Horizon API client
+- `crates/indexer/src/db/mod.rs` - Database module
+- `crates/indexer/src/db/connection.rs` - Database connection
+- `crates/indexer/src/db/migrations.rs` - Migration utilities
+- `crates/indexer/src/sdex.rs` - SDEX indexer implementation
+- `crates/indexer/src/bin/stellarroute-indexer.rs` - Main binary
+- `findings.md` - Updated with Horizon API research findings
+- `task_plan.md` - Updated with Phase 1.2 progress
+
+### Next Actions
+1. Test indexer with local Postgres database
+2. Verify Horizon API connectivity
+3. Add retry logic for transient failures
+4. Research orderbook snapshot endpoint
+5. Implement streaming support for real-time updates
+6. Add comprehensive error handling
+
+### Test Results
+- N/A (not yet tested - code structure complete, needs Rust environment)
+
+### Issues Encountered
+- None yet (implementation phase)
+
+### Notes
+- Using reqwest directly instead of a Stellar-specific SDK (no official Rust SDK found)
+- Polling approach implemented first; streaming can be added later
+- Database migrations embedded in binary for simplicity
+- Following planning-with-files approach throughout
+
+---

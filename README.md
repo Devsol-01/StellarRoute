@@ -5,12 +5,25 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Rust](https://img.shields.io/badge/rust-1.75%2B-orange.svg)](https://www.rust-lang.org)
 [![Soroban](https://img.shields.io/badge/soroban-enabled-purple.svg)](https://soroban.stellar.org)
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+> **🌟 Actively seeking contributors!** We're building critical infrastructure for the Stellar ecosystem and need help from developers of all skill levels. Check out our [open issues](../../issues) to get started.
 
 ---
 
 ## 🚀 Overview
 
-StellarRoute is a comprehensive DEX aggregation platform built for the Stellar ecosystem. It combines liquidity from both the traditional Stellar DEX (SDEX) orderbook and modern Soroban-based AMM pools to provide users with the best possible swap prices through intelligent multi-hop routing.
+StellarRoute is a comprehensive DEX aggregation platform built for the Stellar ecosystem. It **solves a critical gap** left by the deprecation of the SDEX Explorer by providing unified price discovery and optimal routing across both traditional Stellar DEX (SDEX) orderbooks and modern Soroban-based AMM pools.
+
+### The Problem We're Solving
+
+Stellar users currently face:
+- **Fragmented liquidity** between SDEX and Soroban AMM pools
+- **No unified price discovery** across different trading venues
+- **Suboptimal trade execution** due to lack of intelligent routing
+- **Loss of SDEX Explorer** functionality without a clear replacement
+
+StellarRoute addresses these challenges by building open-source infrastructure that benefits traders, developers, and the entire Stellar ecosystem.
 
 ### What We're Building
 
@@ -109,30 +122,68 @@ StellarRoute is built with a modular architecture consisting of several key comp
 
 ---
 
-## 📊 Current Status
+## 📊 Current Status & Contribution Opportunities
 
 **Phase**: M1 - Phase 1.1 (Environment & Project Setup)  
-**Status**: ✅ **95% Complete**
+**Status**: ✅ **95% Complete** | **Actively seeking contributors**
 
-### ✅ Completed
-- Project structure initialized (Rust workspace with 5 crates)
-- Docker Compose setup for PostgreSQL and Redis
-- GitHub Actions CI/CD pipeline configured
-- Documentation structure created
-- Setup scripts and automation
-- Planning files established (`task_plan.md`, `findings.md`, `progress.md`)
+### Why Contribute to StellarRoute?
 
-### 🔄 In Progress
-- Manual Rust installation (see [Setup Guide](docs/development/SETUP.md))
-- Soroban CLI installation (see [Setup Guide](docs/development/SETUP.md))
+- 🎯 **High-impact work**: Building critical Stellar ecosystem infrastructure
+- 📚 **Learn Rust & Soroban**: Gain hands-on experience with cutting-edge blockchain technology
+- 🤝 **Collaborative environment**: Work with experienced Stellar developers
+- 🏆 **Recognition**: Build your portfolio with verifiable open-source contributions
+- 💡 **Clear tasks**: Well-defined issues suitable for all skill levels
 
-### 📋 Next Steps
-1. Complete development environment setup
-2. Begin Phase 1.2: SDEX Indexer Development
-3. Design and implement database schema
-4. Build Horizon API integration
+### ✅ Foundation Completed
+- ✅ Rust workspace structure (5 modular crates)
+- ✅ Docker Compose setup for local development
+- ✅ CI/CD pipeline with GitHub Actions
+- ✅ Comprehensive documentation structure
+- ✅ Database architecture planning
 
-See the full [Development Roadmap](Roadmap.md) for detailed milestones.
+### 🔥 Active Development Areas (Help Wanted!)
+
+We're currently building M1 (Prototype Indexer & API) and need help with:
+
+1. **SDEX Indexer Development** 🚀
+   - Horizon API integration for orderbook data
+   - Real-time streaming implementation
+   - Database schema optimization
+   - *Skills: Rust, API integration, PostgreSQL*
+
+2. **Database Layer** 💾
+   - Migration scripts and schema design
+   - Connection pooling optimization
+   - Query performance tuning
+   - *Skills: PostgreSQL, SQL, Database design*
+
+3. **API Development** 🔌
+   - REST endpoint implementation
+   - WebSocket support for real-time updates
+   - Request validation and error handling
+   - *Skills: Rust (Axum/Actix), REST APIs, WebSocket*
+
+4. **Testing & Documentation** ✅
+   - Unit and integration tests
+   - API documentation
+   - Code examples and tutorials
+   - *Skills: Testing, Technical writing*
+
+5. **Performance Optimization** ⚡
+   - Caching layer implementation
+   - Load testing and profiling
+   - Query optimization
+   - *Skills: Performance tuning, Redis, Benchmarking*
+
+### 📋 Next Immediate Tasks
+1. Implement Stellar Horizon API client
+2. Design and create database schema migrations
+3. Build orderbook indexing service
+4. Create REST API endpoints for quotes
+5. Set up monitoring and logging
+
+**👉 Ready to contribute?** Check our [Issues](../../issues) page for tasks tagged by difficulty level (`good-first-issue`, `help-wanted`, `beginner-friendly`).
 
 ---
 
@@ -202,34 +253,49 @@ StellarRoute/
 
 ## 📈 Development Roadmap
 
-StellarRoute is being developed in 5 major milestones:
-
-| Milestone | Description | Status | Timeline |
-|-----------|-------------|--------|----------|
-| **M1** | Prototype Indexer & API (SDEX Only) | 🔄 In Progress | 6-8 weeks |
-| **M2** | Soroban AMM Integration & Routing Engine | 🔴 Not Started | 8-10 weeks |
-| **M3** | Smart Contracts & Soroban Deployment | 🔴 Not Started | 10-12 weeks |
-| **M4** | Web UI & SDK Libraries | 🔴 Not Started | 10-12 weeks |
-| **M5** | Audits, Documentation & Mainnet Launch | 🔴 Not Started | 8-10 weeks |
-
-**Total Timeline**: ~10-12 months
-
-See the complete [Development Roadmap](Roadmap.md) for detailed phase breakdowns and technical tasks.
+For the complete development roadmap with detailed milestones, phases, and technical tasks, see [Roadmap.md](Roadmap.md).
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions from the community! StellarRoute is open-source and built for the Stellar ecosystem.
+**We actively welcome contributions from developers of all skill levels!** StellarRoute is open-source and built for the Stellar ecosystem by the community.
 
-### How to Contribute
-- Report bugs and issues
-- Suggest new features
-- Submit pull requests
-- Improve documentation
-- Help with testing
+### Quick Start for Contributors
 
-_(Detailed contribution guidelines coming soon)_
+1. **Browse Issues**: Check our [Issues](../../issues) page for tasks
+   - 🟢 `good-first-issue` - Perfect for newcomers
+   - 🟡 `help-wanted` - Ready for contribution
+   - 🔵 `beginner-friendly` - Minimal context needed
+
+2. **Join the Discussion**: Comment on an issue to claim it or ask questions
+
+3. **Fork & Code**: Fork the repo, create a feature branch, and start coding
+
+4. **Submit PR**: Open a pull request with clear description of changes
+
+5. **Review & Merge**: Collaborate with maintainers on code review
+
+### Ways to Contribute
+
+- 🐛 **Fix bugs** - Help us squash issues
+- ✨ **Add features** - Implement new functionality
+- 📝 **Improve docs** - Enhance guides and API documentation
+- 🧪 **Write tests** - Increase code coverage
+- ⚡ **Optimize performance** - Make it faster and more efficient
+- 🎨 **UI/UX improvements** - Enhance the frontend experience (M4)
+
+### Contribution Guidelines
+
+- Write clean, well-documented Rust code
+- Follow existing code style and patterns
+- Add tests for new functionality
+- Update documentation as needed
+- Keep PRs focused and atomic
+
+**New to Stellar or Rust?** No problem! We have mentorship available and beginner-friendly issues to help you get started.
+
+**Questions?** Open a discussion or comment on an issue - we're here to help!
 
 ---
 
@@ -260,5 +326,33 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🎯 Vision
 
 Our goal is to create the most efficient, user-friendly, and developer-centric DEX aggregation platform on Stellar. By combining SDEX orderbook depth with Soroban AMM liquidity, we're building infrastructure that will help traders get the best prices while making it easy for developers to integrate sophisticated trading functionality into their applications.
+
+### Impact on the Stellar Ecosystem
+
+- **For Traders**: Best execution prices and transparent routing
+- **For Developers**: Easy-to-integrate SDKs and comprehensive APIs
+- **For DeFi Projects**: Foundation for building advanced trading applications
+- **For the Ecosystem**: Critical infrastructure filling the SDEX Explorer gap
+
+---
+
+## 🏆 Recognition & Community
+
+This project is part of the **Stellar open-source ecosystem** and actively participates in community initiatives.
+
+- **Stellar Development Foundation** ecosystem project
+- **Open for Drips Wave** participation
+- **Community-driven** development with transparent progress tracking
+
+---
+
+## 💬 Get Involved
+
+- 💼 **Issues & Tasks**: [GitHub Issues](../../issues)
+- 💭 **Discussions**: [GitHub Discussions](../../discussions)
+- 📖 **Documentation**: [docs/](docs/)
+- 🗺️ **Roadmap**: [Roadmap.md](Roadmap.md)
+
+**We're actively building and need your help!** Whether you're a Rust expert or just starting your blockchain journey, there's a place for you in StellarRoute.
 
 **Built with ❤️ for the Stellar ecosystem**

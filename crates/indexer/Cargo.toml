@@ -6,6 +6,10 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[[bin]]
+name = "stellarroute-indexer"
+path = "src/bin/stellarroute-indexer.rs"
+
 [dependencies]
 # Workspace dependencies
 tokio.workspace = true

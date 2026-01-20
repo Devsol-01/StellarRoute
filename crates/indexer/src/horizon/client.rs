@@ -18,15 +18,33 @@ impl HorizonClient {
     /// Fetch offers page.
     ///
     /// Confirmed endpoint: `GET /offers`
-    pub async fn get_offers(&self, limit: u32, cursor: Option<&str>) -> Result<HorizonPage<HorizonOffer>> {
+    /// Parameters:
+    /// - `limit`: Number of offers to fetch (default: 200)
+    /// - `cursor`: Pagination cursor (optional)
+    /// - `selling`: Filter by selling asset (optional)
+    /// - `buying`: Filter by buying asset (optional)
+    pub async fn get_offers(
+        &self,
+        limit: Option<u32>,
+        cursor: Option<&str>,
+        selling: Option<&str>,
+    ) -> Result<Vec<HorizonOffer>> {
+        let limit = limit.unwrap_or(200);
         let mut url = format!("{}/offers?limit={}", self.base_url, limit);
+        
         if let Some(c) = cursor {
             url.push_str("&cursor=");
             url.push_str(c);
         }
+        
+        if let Some(s) = selling {
+            url.push_str("&selling=");
+            url.push_str(s);
+        }
 
-        let resp = self.http.get(url).send().await?.error_for_status()?;
-        Ok(resp.json::<HorizonPage<HorizonOffer>>().await?)
+        let resp = self.http.get(&url).send().await?.error_for_status()?;
+        let page: HorizonPage<HorizonOffer> = resp.json().await?;
+        Ok(page.embedded.records)
     }
 
     /// Convert the Horizon asset JSON into our typed `Asset`.
