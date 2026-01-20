@@ -26,11 +26,19 @@ fn default_horizon_limit() -> u32 {
 }
 
 impl IndexerConfig {
-    pub fn load() -> Result<Self, config::ConfigError> {
+    pub fn load() -> std::result::Result<Self, config::ConfigError> {
         let cfg = config::Config::builder()
             .add_source(config::Environment::default())
             .build()?;
         cfg.try_deserialize()
     }
+
+    /// Convenience constructor from environment variables.
+    pub fn from_env() -> std::result::Result<Self, config::ConfigError> {
+        Self::load()
+    }
 }
+
+// Optional alias if you still want it:
+pub type Config = IndexerConfig;
 

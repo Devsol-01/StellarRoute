@@ -6,7 +6,7 @@ use tracing::{debug, error, info, warn};
 use crate::db::Database;
 use crate::error::{IndexerError, Result};
 use crate::horizon::HorizonClient;
-use crate::models::{asset::Asset, offer::Offer, horizon::HorizonOffer};
+use crate::models::{asset::Asset, horizon::HorizonOffer, offer::Offer};
 
 /// SDEX orderbook indexer
 pub struct SdexIndexer {
@@ -43,8 +43,8 @@ impl SdexIndexer {
     /// Index offers from Horizon API
     async fn index_offers(&self) -> Result<usize> {
         debug!("Fetching offers from Horizon");
-        
-        let horizon_offers = self.horizon.get_offers(None, None, None).await?;
+
+        let horizon_offers: Vec<HorizonOffer> = self.horizon.get_offers(None, None, None).await?;
         debug!("Fetched {} offers from Horizon", horizon_offers.len());
 
         let pool = self.db.pool();
@@ -84,17 +84,17 @@ impl SdexIndexer {
     async fn upsert_asset(&self, pool: &PgPool, asset: &Asset) -> Result<()> {
         let (asset_type, asset_code, asset_issuer) = asset.key();
 
-        sqlx::query!(
+        sqlx::query(
             r#"
             INSERT INTO assets (asset_type, asset_code, asset_issuer, created_at, updated_at)
             VALUES ($1, $2, $3, NOW(), NOW())
             ON CONFLICT (asset_type, asset_code, asset_issuer)
             DO UPDATE SET updated_at = NOW()
             "#,
-            asset_type,
-            asset_code,
-            asset_issuer
         )
+        .bind(asset_type)
+        .bind(asset_code)
+        .bind(asset_issuer)
         .execute(pool)
         .await
         .map_err(IndexerError::Database)?;
@@ -107,9 +107,9 @@ impl SdexIndexer {
         let (selling_type, selling_code, selling_issuer) = offer.selling.key();
         let (buying_type, buying_code, buying_issuer) = offer.buying.key();
 
-        sqlx::query!(
+        sqlx::query(
             r#"
-            INSERT INTO offers (
+            INSERT INTO sdex_offers (
                 offer_id, seller_id, selling_asset_type, selling_asset_code, selling_asset_issuer,
                 buying_asset_type, buying_asset_code, buying_asset_issuer,
                 amount, price_n, price_d, price, last_modified_ledger, last_modified_time,
@@ -127,21 +127,21 @@ impl SdexIndexer {
                 last_modified_time = EXCLUDED.last_modified_time,
                 updated_at = NOW()
             "#,
-            offer.id as i64,
-            offer.seller.as_str(),
-            selling_type,
-            selling_code,
-            selling_issuer,
-            buying_type,
-            buying_code,
-            buying_issuer,
-            offer.amount.as_str(),
-            offer.price_n,
-            offer.price_d,
-            offer.price.as_str(),
-            offer.last_modified_ledger as i64,
-            offer.last_modified_time
         )
+        .bind(offer.id as i64)
+        .bind(offer.seller.as_str())
+        .bind(selling_type)
+        .bind(selling_code)
+        .bind(selling_issuer)
+        .bind(buying_type)
+        .bind(buying_code)
+        .bind(buying_issuer)
+        .bind(offer.amount.as_str())
+        .bind(offer.price_n)
+        .bind(offer.price_d)
+        .bind(offer.price.as_str())
+        .bind(offer.last_modified_ledger as i64)
+        .bind(offer.last_modified_time)
         .execute(pool)
         .await
         .map_err(IndexerError::Database)?;

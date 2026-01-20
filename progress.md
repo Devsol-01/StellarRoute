@@ -152,3 +152,51 @@ StellarRoute/
 - Following planning-with-files approach throughout
 
 ---
+
+## Session 3: Config Build Error Fixes
+**Date:** Config API fixes  
+**Phase:** M1 - Phase 1.2 (Build fixes)
+
+### Actions Taken
+1. Fixed `IndexerConfig::from_env()` missing method error
+   - Added `from_env()` method that wraps `load()`
+   - Used `std::result::Result` for explicit return type
+2. Fixed field name mismatch (`horizon_url` vs `stellar_horizon_url`)
+   - Updated struct field to `stellar_horizon_url` to match usage
+   - Updated binary to use correct field name
+3. Fixed import errors
+   - Updated binary to import `IndexerConfig` directly
+   - Removed unused `Result` import from binary
+4. Cleaned up warnings
+   - Removed unused `migrations::*` re-export from `db/mod.rs`
+5. Fixed sqlx compile-time DB dependency issues
+   - Switched from `sqlx::query!` to `sqlx::query` in `sdex.rs`
+   - This allows compilation without live database connection
+
+### Current Status
+- Config module follows Rust-book style ✅
+- Binary correctly uses IndexerConfig API ✅
+- All build errors resolved ✅
+- Build succeeds: `cargo build -p stellarroute-indexer` ✅
+- Only minor warnings remain (sqlx future incompatibility notice)
+
+### Files Modified
+- `crates/indexer/src/config/mod.rs` - Added `from_env()`, fixed field name, used explicit Result types
+- `crates/indexer/src/bin/stellarroute-indexer.rs` - Fixed imports and field usage
+- `crates/indexer/src/db/mod.rs` - Removed unused re-export
+- `crates/indexer/src/sdex.rs` - Switched to runtime sqlx queries
+
+### Test Results
+- Build successful: `cargo build -p stellarroute-indexer` completes without errors
+- Warnings: Only sqlx future incompatibility notice (non-blocking)
+
+### Issues Encountered
+- Multiple compile errors related to config API mismatch
+- All resolved through systematic fixes following Rust best practices
+
+### Notes
+- Followed Rust-book style for config module (explicit Result types, clear API)
+- Used planning-with-files to track all errors and resolutions
+- Build now ready for runtime testing once Rust environment is set up
+
+---

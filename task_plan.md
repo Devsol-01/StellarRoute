@@ -48,6 +48,11 @@ Build Phase 1.1 foundation for StellarRoute: Set up development environment, pro
 |-------|---------|------------|
 | SSL connection error during Rust installation | 1 | Documented manual installation process in docs/development/SETUP.md |
 | Homebrew tap `stellar/soroban/soroban` not found | 1 | Updated SETUP.md with alternative installation methods (cargo install, installer script, manual binary) |
+| `no function or associated item named from_env` in IndexerConfig | 1 | Added `from_env()` method to IndexerConfig impl, using `std::result::Result` for clarity |
+| `no field horizon_url on type IndexerConfig` | 1 | Changed field name from `horizon_url` to `stellar_horizon_url` in struct definition |
+| `unresolved import crate::config::Config` | 1 | Updated imports to use `IndexerConfig` directly, kept `Config` as optional type alias |
+| `unused import: migrations::*` warning | 1 | Removed unused re-export from `db/mod.rs` |
+| sqlx compile-time DB checks failing | 1 | Switched from `sqlx::query!` to `sqlx::query` to avoid compile-time DB dependency |
 
 ---
 

@@ -6,9 +6,8 @@ use std::process;
 use tracing::{error, info};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 
-use stellarroute_indexer::config::Config;
+use stellarroute_indexer::config::IndexerConfig;
 use stellarroute_indexer::db::Database;
-use stellarroute_indexer::error::Result;
 use stellarroute_indexer::horizon::HorizonClient;
 use stellarroute_indexer::sdex::SdexIndexer;
 
@@ -23,7 +22,7 @@ async fn main() {
     info!("Starting StellarRoute Indexer");
 
     // Load configuration
-    let config = match Config::from_env() {
+    let config = match IndexerConfig::from_env() {
         Ok(config) => config,
         Err(e) => {
             error!("Failed to load configuration: {}", e);
@@ -47,7 +46,7 @@ async fn main() {
     }
 
     // Initialize Horizon client
-    let horizon = HorizonClient::new(&config.horizon_url);
+    let horizon = HorizonClient::new(&config.stellar_horizon_url);
 
     // Create indexer
     let indexer = SdexIndexer::new(horizon, db);

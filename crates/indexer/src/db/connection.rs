@@ -1,9 +1,9 @@
 //! Database connection management
 
-use sqlx::{PgPool, Postgres};
+use sqlx::PgPool;
 use tracing::{error, info};
 
-use crate::config::Config;
+use crate::config::IndexerConfig as Config;
 use crate::error::{IndexerError, Result};
 
 /// Database connection pool
@@ -15,13 +15,11 @@ impl Database {
     /// Create a new database connection pool
     pub async fn new(config: &Config) -> Result<Self> {
         info!("Connecting to database: {}", config.database_url);
-        
-        let pool = PgPool::connect(&config.database_url)
-            .await
-            .map_err(|e| {
-                error!("Failed to connect to database: {}", e);
-                IndexerError::Database(e)
-            })?;
+
+        let pool = PgPool::connect(&config.database_url).await.map_err(|e| {
+            error!("Failed to connect to database: {}", e);
+            IndexerError::Database(e)
+        })?;
 
         info!("Database connection established");
         Ok(Self { pool })
@@ -35,10 +33,10 @@ impl Database {
     /// Run database migrations
     pub async fn migrate(&self) -> Result<()> {
         info!("Running database migrations");
-        
+
         // Read migration files from migrations directory
         let migrations = include_str!("../../migrations/0001_init.sql");
-        
+
         // Execute migration SQL
         sqlx::query(migrations)
             .execute(&self.pool)
