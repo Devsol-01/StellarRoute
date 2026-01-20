@@ -2,7 +2,11 @@
 //!
 //! Handles database connections, migrations, and data persistence.
 
-mod connection;
+pub mod archival;
+pub mod connection;
+pub mod health;
 mod migrations;
 
-pub use connection::*;
+pub use archival::ArchivalManager;
+pub use connection::Database;
+pub use health::{HealthMetric, HealthMonitor, PoolStats};

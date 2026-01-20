@@ -35,19 +35,40 @@ impl Database {
         info!("Running database migrations");
 
         // Read migration files from migrations directory
-        let migrations = include_str!("../../migrations/0001_init.sql");
+        let migration_0001 = include_str!("../../migrations/0001_init.sql");
+        let migration_0002 = include_str!("../../migrations/0002_performance_indexes.sql");
 
-        // Execute migration SQL
-        sqlx::query(migrations)
+        // Execute migrations in order
+        info!("Running migration 0001_init.sql");
+        sqlx::query(migration_0001)
             .execute(&self.pool)
             .await
             .map_err(|e| {
-                error!("Migration failed: {}", e);
+                error!("Migration 0001 failed: {}", e);
+                IndexerError::Database(e)
+            })?;
+
+        info!("Running migration 0002_performance_indexes.sql");
+        sqlx::query(migration_0002)
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                error!("Migration 0002 failed: {}", e);
                 IndexerError::Database(e)
             })?;
 
         info!("Database migrations completed");
         Ok(())
+    }
+
+    /// Create a health monitor for this database
+    pub fn health_monitor(&self) -> super::HealthMonitor {
+        super::HealthMonitor::new(self.pool.clone())
+    }
+
+    /// Create an archival manager for this database
+    pub fn archival_manager(&self) -> super::ArchivalManager {
+        super::ArchivalManager::new(self.pool.clone())
     }
 
     /// Check database health

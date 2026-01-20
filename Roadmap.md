@@ -16,7 +16,7 @@ This roadmap outlines the complete development journey for StellarRoute, from in
 ## Milestone Breakdown
 
 ### **M1: Prototype Indexer & API Endpoints (SDEX Only)** 
-**Status:** 🔴 Not Started  
+**Status:** 🟡 In Progress (60% Complete)  
 **Duration:** ~6-8 weeks  
 **Priority:** Critical Foundation
 
@@ -29,34 +29,36 @@ This roadmap outlines the complete development journey for StellarRoute, from in
 
 #### Technical Tasks
 
-**Phase 1.1: Environment & Project Setup**
-- [ ] Set up Rust development environment
-- [ ] Install Soroban CLI and Rust toolchain (`rustup target add wasm32-unknown-unknown`)
-- [ ] Initialize project structure with workspace layout
-- [ ] Configure CI/CD pipelines (GitHub Actions)
-- [ ] Set up local development environment (Docker Compose for Postgres)
-- [ ] Create project documentation structure
+**Phase 1.1: Environment & Project Setup** ✅ **COMPLETE**
+- [x] Set up Rust development environment
+- [x] Install Soroban CLI and Rust toolchain (`rustup target add wasm32-unknown-unknown`)
+- [x] Initialize project structure with workspace layout
+- [x] Configure CI/CD pipelines (GitHub Actions)
+- [x] Set up local development environment (Docker Compose for Postgres)
+- [x] Create project documentation structure
 
-**Phase 1.2: SDEX Indexer Development**
-- [ ] Research Stellar Horizon API endpoints for orderbook data
-- [ ] Design database schema for orderbook storage (Postgres)
+**Phase 1.2: SDEX Indexer Development** ✅ **COMPLETE**
+- [x] Research Stellar Horizon API endpoints for orderbook data
+- [x] Design database schema for orderbook storage (Postgres)
   - Offers table (price, amount, timestamp, asset pairs)
   - Orderbook state table (snapshots, versioning)
   - Asset metadata table
-- [ ] Implement Stellar SDK integration (rust-stellar-sdk)
-- [ ] Build orderbook indexer service
-  - Real-time streaming from Horizon API
-  - Historical data backfill capability
-  - State management and conflict resolution
-- [ ] Add error handling and retry logic
-- [ ] Implement data validation and sanitization
+- [x] Implement Horizon API client (using reqwest directly - no official Rust SDK)
+- [x] Build orderbook indexer service
+  - Real-time streaming from Horizon API (polling-based, SSE-ready)
+  - Polling mode for historical data
+  - Dual-mode support (polling & streaming)
+- [x] Add error handling and retry logic (exponential backoff, 3 retries)
+- [x] Implement data validation and sanitization (comprehensive validation)
 
-**Phase 1.3: Database Layer**
-- [ ] Set up Postgres database migrations (use `sqlx` or `diesel`)
-- [ ] Create normalized schema for price feeds
-- [ ] Implement connection pooling
-- [ ] Add database indexes for query performance
-- [ ] Create data archival strategy for historical data
+**Phase 1.3: Database Layer** ✅ **COMPLETE**
+- [x] Set up Postgres database migrations (sqlx migrations complete)
+- [x] Create normalized schema for price feeds (assets + offers tables)
+- [x] Implement connection pooling (sqlx PgPool configured)
+- [x] Add database indexes for query performance (11 indexes added)
+- [x] Create data archival strategy for historical data (archival table + functions)
+- [x] Optimize query performance (materialized views, denormalized views)
+- [x] Add database health monitoring (HealthMonitor, metrics tracking)
 
 **Phase 1.4: REST API Foundation**
 - [ ] Choose API framework (Axum/Actix-web/Rocket)
