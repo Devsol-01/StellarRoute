@@ -6,6 +6,7 @@ use std::{net::SocketAddr, sync::Arc};
 use tower_http::{
     compression::CompressionLayer,
     cors::{Any, CorsLayer},
+    trace::TraceLayer,
 };
 use tracing::{info, warn};
 use utoipa::OpenApi;
@@ -105,6 +106,9 @@ impl Server {
         // Add rate limiting
         let rate_limit = RateLimitLayer::default();
         app = app.layer(rate_limit);
+
+        // Add request logging (method, URI, status code, latency)
+        app = app.layer(TraceLayer::new_for_http());
 
         app
     }

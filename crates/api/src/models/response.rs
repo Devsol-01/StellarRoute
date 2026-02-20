@@ -19,12 +19,24 @@ pub struct HealthResponse {
     pub components: std::collections::HashMap<String, ComponentStatus>,
 }
 
-/// Trading pair information
+/// Trading pair information — matches GET /api/v1/pairs spec
+///
+/// `base` / `counter` are human-readable codes (e.g. "XLM", "USDC").
+/// `base_asset` / `counter_asset` are canonical Stellar asset identifiers
+/// ("native" for XLM, or "CODE:ISSUER" for issued assets).
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct TradingPair {
-    pub base_asset: AssetInfo,
-    pub quote_asset: AssetInfo,
+    /// Human-readable base asset code (e.g. "XLM")
+    pub base: String,
+    /// Human-readable counter asset code (e.g. "USDC")
+    pub counter: String,
+    /// Canonical base asset identifier ("native" or "CODE:ISSUER")
+    pub base_asset: String,
+    /// Canonical counter asset identifier ("native" or "CODE:ISSUER")
+    pub counter_asset: String,
+    /// Number of open offers for this pair
     pub offer_count: i64,
+    /// RFC-3339 timestamp of the most recent offer update
     pub last_updated: Option<String>,
 }
 
@@ -60,11 +72,20 @@ impl AssetInfo {
         }
     }
 
-    /// Display name for the asset
+    /// Human-readable code ("XLM" for native assets)
     pub fn display_name(&self) -> String {
         match &self.asset_code {
             Some(code) => code.clone(),
             None => "XLM".to_string(),
+        }
+    }
+
+    /// Canonical Stellar asset identifier: "native" or "CODE:ISSUER"
+    pub fn to_canonical(&self) -> String {
+        match (&self.asset_code, &self.asset_issuer) {
+            (None, _) => "native".to_string(),
+            (Some(code), Some(issuer)) => format!("{}:{}", code, issuer),
+            (Some(code), None) => code.clone(),
         }
     }
 }
