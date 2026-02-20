@@ -23,50 +23,51 @@ pub struct Offer {
 impl Offer {
     /// Validate offer data
     pub fn validate(&self) -> Result<()> {
-        // Validate seller address (basic check - should be 56 chars starting with G)
         if !self.seller.starts_with('G') || self.seller.len() != 56 {
-            return Err(IndexerError::StellarApi(format!(
-                "Invalid seller address: {}",
-                self.seller
-            )));
+            return Err(IndexerError::InvalidOffer {
+                offer_id: self.id.to_string(),
+                reason: format!("Invalid seller address: {}", self.seller),
+            });
         }
 
-        // Validate amount is positive
-        let amount_f64: f64 = self
-            .amount
-            .parse()
-            .map_err(|_| IndexerError::StellarApi(format!("Invalid amount: {}", self.amount)))?;
+        let amount_f64: f64 = self.amount.parse().map_err(|_| {
+            IndexerError::NumericParse {
+                value: self.amount.clone(),
+                expected_type: "positive number".to_string(),
+            }
+        })?;
         if amount_f64 <= 0.0 {
-            return Err(IndexerError::StellarApi(format!(
-                "Amount must be positive: {}",
-                self.amount
-            )));
+            return Err(IndexerError::InvalidOffer {
+                offer_id: self.id.to_string(),
+                reason: format!("Amount must be positive: {}", self.amount),
+            });
         }
 
-        // Validate price is positive
-        let price_f64: f64 = self
-            .price
-            .parse()
-            .map_err(|_| IndexerError::StellarApi(format!("Invalid price: {}", self.price)))?;
+        let price_f64: f64 = self.price.parse().map_err(|_| {
+            IndexerError::NumericParse {
+                value: self.price.clone(),
+                expected_type: "positive number".to_string(),
+            }
+        })?;
         if price_f64 <= 0.0 {
-            return Err(IndexerError::StellarApi(format!(
-                "Price must be positive: {}",
-                self.price
-            )));
+            return Err(IndexerError::InvalidOffer {
+                offer_id: self.id.to_string(),
+                reason: format!("Price must be positive: {}", self.price),
+            });
         }
 
-        // Validate price ratio
         if self.price_d == 0 {
-            return Err(IndexerError::StellarApi(
-                "Price denominator cannot be zero".to_string(),
-            ));
+            return Err(IndexerError::InvalidOffer {
+                offer_id: self.id.to_string(),
+                reason: "Price denominator cannot be zero".to_string(),
+            });
         }
 
-        // Validate that selling and buying assets are different
         if self.selling == self.buying {
-            return Err(IndexerError::StellarApi(
-                "Selling and buying assets must be different".to_string(),
-            ));
+            return Err(IndexerError::InvalidOffer {
+                offer_id: self.id.to_string(),
+                reason: "Selling and buying assets must be different".to_string(),
+            });
         }
 
         Ok(())
@@ -78,7 +79,10 @@ impl TryFrom<HorizonOffer> for Offer {
 
     fn try_from(horizon_offer: HorizonOffer) -> Result<Self> {
         let id = horizon_offer.id.parse::<u64>().map_err(|_| {
-            IndexerError::StellarApi(format!("Invalid offer ID: {}", horizon_offer.id))
+            IndexerError::NumericParse {
+                value: horizon_offer.id.clone(),
+                expected_type: "u64 offer ID".to_string(),
+            }
         })?;
 
         // Parse assets using the client's parse_asset method
@@ -118,40 +122,52 @@ impl TryFrom<HorizonOffer> for Offer {
 }
 
 fn parse_asset_from_value(v: &serde_json::Value) -> Result<Asset> {
-    let asset_type = v
-        .get("asset_type")
-        .and_then(|x| x.as_str())
-        .ok_or_else(|| IndexerError::StellarApi("missing asset_type".to_string()))?;
+    let asset_type = v.get("asset_type").and_then(|x| x.as_str()).ok_or_else(|| {
+        IndexerError::MissingField {
+            field: "asset_type".to_string(),
+            context: "Horizon API asset response".to_string(),
+        }
+    })?;
 
     match asset_type {
         "native" => Ok(Asset::Native),
         "credit_alphanum4" => Ok(Asset::CreditAlphanum4 {
-            asset_code: v
-                .get("asset_code")
-                .and_then(|x| x.as_str())
-                .ok_or_else(|| IndexerError::StellarApi("missing asset_code".to_string()))?
-                .to_string(),
-            asset_issuer: v
-                .get("asset_issuer")
-                .and_then(|x| x.as_str())
-                .ok_or_else(|| IndexerError::StellarApi("missing asset_issuer".to_string()))?
-                .to_string(),
+            asset_code: v.get("asset_code").and_then(|x| x.as_str()).ok_or_else(|| {
+                IndexerError::MissingField {
+                    field: "asset_code".to_string(),
+                    context: "credit_alphanum4 asset".to_string(),
+                }
+            })?
+            .to_string(),
+            asset_issuer: v.get("asset_issuer").and_then(|x| x.as_str()).ok_or_else(|| {
+                IndexerError::MissingField {
+                    field: "asset_issuer".to_string(),
+                    context: "credit_alphanum4 asset".to_string(),
+                }
+            })?
+            .to_string(),
         }),
         "credit_alphanum12" => Ok(Asset::CreditAlphanum12 {
-            asset_code: v
-                .get("asset_code")
-                .and_then(|x| x.as_str())
-                .ok_or_else(|| IndexerError::StellarApi("missing asset_code".to_string()))?
-                .to_string(),
-            asset_issuer: v
-                .get("asset_issuer")
-                .and_then(|x| x.as_str())
-                .ok_or_else(|| IndexerError::StellarApi("missing asset_issuer".to_string()))?
+            asset_code: v.get("asset_code").and_then(|x| x.as_str()).ok_or_else(|| {
+                IndexerError::MissingField {
+                    field: "asset_code".to_string(),
+                    context: "credit_alphanum12 asset".to_string(),
+                }
+            })?
+            .to_string(),
+            asset_issuer: v.get("asset_issuer").and_then(|x| x.as_str()).ok_or_else(|| {
+                IndexerError::MissingField {
+                    field: "asset_issuer".to_string(),
+                    context: "credit_alphanum12 asset".to_string(),
+                }
+            })?
+            .to_string(),
+        }),
+        other => Err(IndexerError::InvalidAsset {
+            asset: other.to_string(),
+            reason: "Unknown asset type, expected: native, credit_alphanum4, or credit_alphanum12"
                 .to_string(),
         }),
-        other => Err(IndexerError::StellarApi(format!(
-            "unknown asset_type: {other}"
-        ))),
     }
 }
 
