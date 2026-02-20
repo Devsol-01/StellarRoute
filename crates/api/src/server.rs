@@ -129,7 +129,12 @@ impl Server {
         Ok(())
     }
 
-    /// Get router for testing
+    /// Consume the server and return the router (for integration testing)
+    pub fn into_router(self) -> Router {
+        self.app
+    }
+
+    /// Get router for testing (crate-internal)
     #[cfg(test)]
     pub fn router(self) -> Router {
         self.app
