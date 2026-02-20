@@ -133,7 +133,7 @@ impl Server {
         Ok(())
     }
 
-    /// Consume the server and return the router (useful for integration testing)
+    /// Consume the server and return the router (for integration testing)
     pub fn into_router(self) -> Router {
         self.app
     }

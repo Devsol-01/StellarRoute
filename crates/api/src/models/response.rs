@@ -3,12 +3,20 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-/// Health check response
+/// Per-component health status value
+pub type ComponentStatus = String;
+
+/// Health check response — matches GET /health spec
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct HealthResponse {
+    /// Overall service status: "healthy" or "unhealthy"
     pub status: String,
+    /// ISO-8601 UTC timestamp of this check
+    pub timestamp: String,
+    /// Crate version
     pub version: String,
-    pub timestamp: i64,
+    /// Per-dependency status ("healthy" | "unhealthy")
+    pub components: std::collections::HashMap<String, ComponentStatus>,
 }
 
 /// Trading pair information — matches GET /api/v1/pairs spec
