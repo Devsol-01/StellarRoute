@@ -25,8 +25,7 @@ fn trading_pair_serializes_to_spec_shape() {
         base: "XLM".to_string(),
         counter: "USDC".to_string(),
         base_asset: "native".to_string(),
-        counter_asset: "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5"
-            .to_string(),
+        counter_asset: "USDC:GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5".to_string(),
         offer_count: 42,
         last_updated: None,
     };
@@ -142,7 +141,10 @@ async fn get_pairs_returns_200_and_valid_json() {
     if let Some(pair) = json["pairs"].as_array().and_then(|a| a.first()) {
         assert!(pair.get("base").is_some(), "pair missing 'base'");
         assert!(pair.get("counter").is_some(), "pair missing 'counter'");
-        assert!(pair.get("base_asset").is_some(), "pair missing 'base_asset'");
+        assert!(
+            pair.get("base_asset").is_some(),
+            "pair missing 'base_asset'"
+        );
         assert!(
             pair.get("counter_asset").is_some(),
             "pair missing 'counter_asset'"

@@ -49,9 +49,7 @@ fn health_response_serializes_to_spec_shape() {
 
     // The old shape must not appear
     assert!(
-        json.get("timestamp")
-            .and_then(|v| v.as_i64())
-            .is_none(),
+        json.get("timestamp").and_then(|v| v.as_i64()).is_none(),
         "timestamp must be a string, not an integer"
     );
 }
@@ -97,9 +95,15 @@ async fn health_returns_200_when_db_is_up() {
     assert!(json["version"].as_str().is_some());
 
     let components = json["components"].as_object().expect("components missing");
-    assert_eq!(components.get("database").and_then(|v| v.as_str()), Some("healthy"));
+    assert_eq!(
+        components.get("database").and_then(|v| v.as_str()),
+        Some("healthy")
+    );
     // redis will be "not_configured" in default config
-    assert!(components.contains_key("redis"), "redis key must be present");
+    assert!(
+        components.contains_key("redis"),
+        "redis key must be present"
+    );
 }
 
 #[tokio::test]
