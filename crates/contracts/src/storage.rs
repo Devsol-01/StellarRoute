@@ -10,7 +10,7 @@ pub enum StorageKey {
     PoolCount,
 }
 
-// TTL Constants (approx 1 week assuming 5s ledgers)
+// TTL Constants
 const DAY_IN_LEDGERS: u32 = 17280;
 const INSTANCE_BUMP_AMOUNT: u32 = 7 * DAY_IN_LEDGERS;
 const INSTANCE_LIFETIME_THRESHOLD: u32 = 1 * DAY_IN_LEDGERS;
@@ -49,4 +49,10 @@ pub fn get_pool_count(e: &Env) -> u32 {
 
 pub fn set_pool_count(e: &Env, count: u32) {
     e.storage().instance().set(&StorageKey::PoolCount, &count);
+}
+
+pub fn is_supported_pool(e: &Env, pool: Address) -> bool {
+    e.storage()
+        .persistent()
+        .has(&StorageKey::SupportedPool(pool))
 }
