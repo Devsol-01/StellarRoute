@@ -135,14 +135,3 @@ impl StellarRoute {
         })
     }
 }
-// Internal helper for pool count logic
-fn get_pool_count(e: &Env) -> u32 {
-    e.storage()
-        .instance()
-        .get(&StorageKey::PoolCount)
-        .unwrap_or(0)
-}
-
-fn set_pool_count(e: &Env, count: u32) {
-    e.storage().instance().set(&StorageKey::PoolCount, &count);
-}
