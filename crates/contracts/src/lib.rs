@@ -1,5 +1,7 @@
 #![no_std]
 
+pub mod adapters;
+pub mod constant_product_adapter;
 pub mod errors;
 pub mod events;
 pub mod router;
