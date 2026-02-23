@@ -1,6 +1,7 @@
 //! StellarRoute API Server Binary
 
-use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
+use std::time::Duration;
 use stellarroute_api::{Server, ServerConfig};
 use tracing::{error, info};
 
@@ -20,10 +21,46 @@ async fn main() {
     let database_url = std::env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://localhost/stellarroute".to_string());
 
-    info!("Connecting to database...");
-    let pool = match PgPool::connect(&database_url).await {
+    // Read pool configuration from environment variables
+    let max_connections: u32 = std::env::var("DB_MAX_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+    let min_connections: u32 = std::env::var("DB_MIN_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(2);
+    let connection_timeout_secs: u64 = std::env::var("DB_CONNECTION_TIMEOUT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(30);
+    let idle_timeout_secs: u64 = std::env::var("DB_IDLE_TIMEOUT")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(600);
+    let max_lifetime_secs: u64 = std::env::var("DB_MAX_LIFETIME")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(1800);
+
+    info!(
+        "Connecting to database (pool: min={}, max={}, timeout={}s)...",
+        min_connections, max_connections, connection_timeout_secs
+    );
+    let pool = match PgPoolOptions::new()
+        .max_connections(max_connections)
+        .min_connections(min_connections)
+        .acquire_timeout(Duration::from_secs(connection_timeout_secs))
+        .idle_timeout(Duration::from_secs(idle_timeout_secs))
+        .max_lifetime(Duration::from_secs(max_lifetime_secs))
+        .connect(&database_url)
+        .await
+    {
         Ok(pool) => {
-            info!("✅ Database connection established");
+            info!(
+                "✅ Database connection pool established (max_connections={})",
+                max_connections
+            );
             pool
         }
         Err(e) => {
