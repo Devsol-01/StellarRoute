@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Symbol, Vec};
+use soroban_sdk::{contracttype, Address, Env, Symbol, Vec};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -41,4 +41,20 @@ pub struct SwapParams {
     pub min_amount_out: i128,
     pub recipient: Address,
     pub deadline: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug)]
+pub struct QuoteResult {
+    pub expected_output: i128,
+    pub price_impact_bps: u32, // 100 = 1%
+    pub fee_amount: i128,
+    pub route: Route,
+    pub valid_until: u64,
+}
+
+// Interface for AMM pools (SEP-like standard)
+pub trait LiquidityPoolInterface {
+    fn get_rsrvs(e: Env) -> (i128, i128);
+    fn swap_out(e: Env, in_asset: Asset, out_asset: Asset, amount_in: i128) -> i128;
 }
