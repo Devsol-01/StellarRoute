@@ -4,7 +4,7 @@ use crate::storage::{
     self, extend_instance_ttl, get_fee_rate, get_fee_to, increment_nonce, is_supported_pool,
     transfer_asset, StorageKey,
 };
-use crate::types::{QuoteResult, Route, SwapParams, SwapResult}; // Added missing imports
+use crate::types::{QuoteResult, Route, SwapParams, SwapResult};
 use soroban_sdk::{contract, contractimpl, symbol_short, vec, Address, Env, IntoVal};
 
 #[contract]
@@ -90,6 +90,7 @@ impl StellarRoute {
         Ok(())
     }
 
+    // UPDATED: Now calls "get_quote" on the adapter
     pub fn get_quote(e: Env, amount_in: i128, route: Route) -> Result<QuoteResult, ContractError> {
         if amount_in <= 0 || route.hops.is_empty() || route.hops.len() > 4 {
             return Err(ContractError::InvalidRoute);
@@ -104,9 +105,10 @@ impl StellarRoute {
                 return Err(ContractError::PoolNotSupported);
             }
 
+            // Standards fix: Calling 'get_quote' instead of 'swap_out'
             let call_result = e.try_invoke_contract::<i128, soroban_sdk::Error>(
                 &hop.pool,
-                &symbol_short!("swap_out"),
+                &symbol_short!("get_quote"),
                 vec![
                     &e,
                     hop.source.into_val(&e),
@@ -119,7 +121,7 @@ impl StellarRoute {
                 Ok(Ok(val)) => val,
                 _ => return Err(ContractError::PoolCallFailed),
             };
-            total_impact_bps += 5;
+            total_impact_bps += 5; // Simplified impact
         }
 
         let fee_rate = get_fee_rate(&e);
@@ -135,13 +137,13 @@ impl StellarRoute {
         })
     }
 
+    // UPDATED: Now calls "swap" on the adapter
     pub fn execute_swap(
         e: Env,
         sender: Address,
         params: SwapParams,
     ) -> Result<SwapResult, ContractError> {
         sender.require_auth();
-        // Fixed the self call by using StellarRoute::
         StellarRoute::require_not_paused(&e)?;
 
         if e.ledger().sequence() as u64 > params.deadline {
@@ -152,7 +154,9 @@ impl StellarRoute {
             return Err(ContractError::InvalidRoute);
         }
 
-        // 1. Transfer input tokens from sender to first pool
+        let mut current_input_amount = params.amount_in;
+
+        // 1. Initial Transfer to the first Pool Adapter
         let first_hop = params.route.hops.get(0).unwrap();
         transfer_asset(
             &e,
@@ -162,8 +166,6 @@ impl StellarRoute {
             params.amount_in,
         );
 
-        let mut current_input_amount = params.amount_in;
-
         // 2. Multi-Hop Execution
         for i in 0..params.route.hops.len() {
             let hop = params.route.hops.get(i).unwrap();
@@ -172,14 +174,17 @@ impl StellarRoute {
                 return Err(ContractError::PoolNotSupported);
             }
 
+            // Standards fix: Calling 'swap' instead of 'swap_out'
+            // Added min_out parameter (0 for intermediate hops)
             let call_result = e.try_invoke_contract::<i128, soroban_sdk::Error>(
                 &hop.pool,
-                &symbol_short!("swap_out"),
+                &symbol_short!("swap"),
                 vec![
                     &e,
                     hop.source.into_val(&e),
                     hop.destination.into_val(&e),
                     current_input_amount.into_val(&e),
+                    0_i128.into_val(&e),
                 ],
             );
 
@@ -199,6 +204,7 @@ impl StellarRoute {
         }
 
         // 4. Send output to recipient and fee to treasury
+        // Note: The tokens are now held by the Router after the last adapter finishes
         let last_hop = params.route.hops.get(params.route.hops.len() - 1).unwrap();
         transfer_asset(
             &e,
