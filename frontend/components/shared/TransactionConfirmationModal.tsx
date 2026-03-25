@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PathStep } from "@/types";
+import { describeTradeRoute } from "@/lib/route-helpers";
 import { TransactionStatus } from "@/types/transaction";
 import {
   ArrowDown,
@@ -161,19 +162,32 @@ export function TransactionConfirmationModal({
                   <span className="text-muted-foreground">Network Fee</span>
                   <span>{networkFee} XLM</span>
                 </div>
-                <div className="flex justify-between items-center pt-2">
-                  <span className="text-muted-foreground">Route</span>
-                  <div className="flex items-center gap-1 text-xs">
+                <div className="flex flex-col gap-1 sm:flex-row sm:justify-between sm:items-center pt-2">
+                  <span className="text-muted-foreground shrink-0">Route</span>
+                  <div
+                    className="flex flex-wrap items-center gap-x-0.5 gap-y-1 text-xs sm:justify-end sm:max-w-[min(100%,16rem)]"
+                    aria-label={`Execution route: ${describeTradeRoute(routePath)}`}
+                  >
                     {routePath.map((step, idx) => {
-                      const from = step.from_asset.asset_type === 'native' ? 'XLM' : step.from_asset.asset_code;
-                      const to = step.to_asset.asset_type === 'native' ? 'XLM' : step.to_asset.asset_code;
-                       return (
-                         <span key={idx} className="flex items-center gap-1">
-                           {idx === 0 && <span>{from}</span>}
-                           <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                           <span>{to}</span>
-                         </span>
-                       )
+                      const from =
+                        step.from_asset.asset_type === "native"
+                          ? "XLM"
+                          : step.from_asset.asset_code;
+                      const to =
+                        step.to_asset.asset_type === "native"
+                          ? "XLM"
+                          : step.to_asset.asset_code;
+                      return (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-0.5"
+                          aria-hidden="true"
+                        >
+                          {idx === 0 && <span>{from}</span>}
+                          <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <span>{to}</span>
+                        </span>
+                      );
                     })}
                   </div>
                 </div>
