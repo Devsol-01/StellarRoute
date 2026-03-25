@@ -112,8 +112,8 @@ impl RegionRegistry {
         let mut configs = HashMap::new();
 
         // Primary region (mandatory)
-        let primary_url = std::env::var("DATABASE_URL")
-            .map_err(|_| "DATABASE_URL not set".to_string())?;
+        let primary_url =
+            std::env::var("DATABASE_URL").map_err(|_| "DATABASE_URL not set".to_string())?;
         configs.insert(
             RegionId::UsEast,
             RegionConfig::new(RegionId::UsEast, primary_url, 0),
@@ -224,11 +224,7 @@ mod tests {
 
     #[test]
     fn test_region_config_defaults() {
-        let config = RegionConfig::new(
-            RegionId::EuWest,
-            "postgres://eu".to_string(),
-            1,
-        );
+        let config = RegionConfig::new(RegionId::EuWest, "postgres://eu".to_string(), 1);
         assert_eq!(config.max_replica_lag_secs, 5);
         assert_eq!(config.max_staleness_secs, 10);
         assert!(config.enabled);

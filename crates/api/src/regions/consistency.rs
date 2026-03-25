@@ -129,7 +129,11 @@ impl ConsistencyConstraint {
     }
 
     /// Check if version satisfies both staleness and version-match requirements
-    pub fn satisfies_with_baseline(&self, version: &DataVersion, baseline_ledger: Option<u32>) -> bool {
+    pub fn satisfies_with_baseline(
+        &self,
+        version: &DataVersion,
+        baseline_ledger: Option<u32>,
+    ) -> bool {
         if !self.satisfies(version) {
             return false;
         }

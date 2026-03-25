@@ -30,8 +30,6 @@ import {
   parseSellAmount,
 } from "@/lib/amount-input";
 
-import { QUOTE_AUTO_REFRESH_INTERVAL_MS } from "@/lib/quote-stale";
-
 const MOCK_WALLET = "GBSU...XYZ9";
 
 function pairKey(p: TradingPair): string {
@@ -54,7 +52,7 @@ const mockRoute: PathStep[] = [
 export function DemoSwap() {
   const { data: pairs, loading: pairsLoading, error: pairsError } = usePairs();
   const { isConnected, stubSpendableBalance } = useWallet();
-  const { settings } = useSettings();
+
 
   const [selectedKey, setSelectedKey] = useState<string>("");
   const [sellRaw, setSellRaw] = useState<string>("");
@@ -99,6 +97,8 @@ export function DemoSwap() {
   const quoteBase = selectedPair?.base_asset ?? "";
   const quoteCounter = selectedPair?.counter_asset ?? "";
 
+
+
   const {
     data: quote,
     loading: quoteLoading,
@@ -110,19 +110,6 @@ export function DemoSwap() {
   } = useQuoteRefresh(quoteBase, quoteCounter, numericForQuote, "sell");
 
   const refreshDisabled = quoteLoading || manualRefreshCoolingDown || !numericForQuote;
-
-  const {
-    refresh,
-    refreshDisabled,
-    autoRefreshEnabled,
-    setAutoRefreshEnabled,
-  } = useQuoteRefresh({
-    baseAsset: quoteBase,
-    counterAsset: quoteCounter,
-    amount: numericForQuote,
-    side: "sell",
-    enabled: Boolean(selectedPair && numericForQuote !== undefined),
-  });
 
   const amountInputInvalid =
     sellRaw.trim() !== "" &&
@@ -169,8 +156,7 @@ export function DemoSwap() {
           const fromAmt =
             parseResult.status === "ok" ? parseResult.normalized : "0";
           const toAmt = quote?.total ?? "10.5";
-          const resolvedPriceImpact =
-            quote?.priceImpact != null ? `${quote.priceImpact}%` : "—";
+          const resolvedPriceImpact = "—";
 
           if (isSuccess) {
             const mockHash = "mock_tx_" + Math.random().toString(36).substring(7);
@@ -189,7 +175,7 @@ export function DemoSwap() {
               toAsset: selectedPair?.counter ?? "USDC",
               toAmount: toAmt,
               exchangeRate: quote?.price ?? "0.105",
-              priceImpact: resolvedPriceImpact,
+              priceImpact: "—",
               minReceived: toAmt,
               networkFee: "0.00001",
               routePath: quote?.path?.length ? quote.path : mockRoute,
@@ -215,7 +201,7 @@ export function DemoSwap() {
               toAsset: selectedPair?.counter ?? "USDC",
               toAmount: toAmt,
               exchangeRate: quote?.price ?? "0.105",
-              priceImpact: resolvedPriceImpact,
+              priceImpact: "—",
               minReceived: toAmt,
               networkFee: "0.00001",
               routePath: quote?.path?.length ? quote.path : mockRoute,
@@ -236,8 +222,7 @@ export function DemoSwap() {
   const receivePreview =
     quote && parseResult.status === "ok" ? quote.total : "—";
 
-  const priceImpactDisplay =
-    quote?.priceImpact != null ? `${quote.priceImpact}%` : "—";
+  const priceImpactDisplay = "—";
 
   const slippageTooLow = slippage !== null && slippage < 0.1;
   const slippageTooHigh = slippage !== null && slippage > 1;

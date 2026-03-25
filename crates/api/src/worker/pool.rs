@@ -83,12 +83,8 @@ impl RouteWorkerPool {
             .should_accept(stats.pending, stats.processing)?;
 
         // Create job with retry policy
-        let job = RouteComputationJob::new(
-            base,
-            quote,
-            payload,
-            self.config.retry_strategy.max_retries,
-        );
+        let job =
+            RouteComputationJob::new(base, quote, payload, self.config.retry_strategy.max_retries);
 
         // Check if job already being processed (deduplication)
         if !self.dedup.try_add(&job.id).await {
@@ -198,9 +194,7 @@ impl RouteWorkerPool {
 
     /// Perform periodic cleanup
     pub async fn cleanup(&self) -> Result<()> {
-        self.dedup
-            .cleanup_expired(self.config.dedup_ttl_secs)
-            .await;
+        self.dedup.cleanup_expired(self.config.dedup_ttl_secs).await;
         Ok(())
     }
 }
