@@ -3,7 +3,6 @@ use axum::{
     http::{Request, StatusCode},
 };
 use serde_json::Value;
-use sqlx::PgPool;
 use stellarroute_api::{Server, ServerConfig};
 use tower::ServiceExt;
 
