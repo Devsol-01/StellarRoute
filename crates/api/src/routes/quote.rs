@@ -19,12 +19,9 @@ use std::sync::Arc;
 use tracing::{debug, info_span, Instrument};
 
 use stellarroute_routing::health::filter::GraphFilter;
-use stellarroute_routing::health::freshness::{FreshnessGuard, FreshnessOutcome};
-use stellarroute_routing::health::policy::{
-    ExclusionPolicy, ExclusionThresholds, OverrideEntry, OverrideRegistry,
-};
+use stellarroute_routing::health::policy::{ExclusionPolicy, OverrideRegistry};
 use stellarroute_routing::health::scorer::{
-    AmmScorer, HealthScorer, SdexScorer, VenueScorerInput, VenueType,
+    AmmScorer, HealthScorer, HealthScoringConfig, SdexScorer, VenueScorerInput, VenueType,
 };
 
 use crate::{
@@ -32,10 +29,9 @@ use crate::{
     error::{ApiError, Result},
     models::{
         request::{AssetPath, QuoteParams},
-        AssetInfo, DataFreshness, ExcludedVenueInfo as ApiExcludedVenueInfo,
-        ExclusionDiagnostics as ApiExclusionDiagnostics,
-        ExclusionReason as ApiExclusionReason, PathStep, QuoteRationaleMetadata, QuoteResponse,
-        VenueEvaluation,
+        AssetInfo, ExcludedVenueInfo as ApiExcludedVenueInfo,
+        ExclusionDiagnostics as ApiExclusionDiagnostics, ExclusionReason as ApiExclusionReason,
+        PathStep, QuoteRationaleMetadata, QuoteResponse, VenueEvaluation,
     },
     state::AppState,
 };
@@ -249,7 +245,12 @@ async fn find_best_price(
     base_id: uuid::Uuid,
     quote_id: uuid::Uuid,
     amount: f64,
-) -> Result<(f64, Vec<PathStep>, QuoteRationaleMetadata, ApiExclusionDiagnostics, FreshnessOutcome, Vec<chrono::DateTime<chrono::Utc>>)> {
+) -> Result<(
+    f64,
+    Vec<PathStep>,
+    QuoteRationaleMetadata,
+    ApiExclusionDiagnostics,
+)> {
     let rows = sqlx::query(
         r#"
                 select
@@ -329,73 +330,19 @@ async fn find_best_price(
         })
         .collect();
 
-    // --- Freshness filtering (Req 6.4: must happen BEFORE health scoring) ---
-    let freshness_outcome = FreshnessGuard::evaluate(
-        &scorer_inputs,
-        &state.health_config.freshness_threshold_secs,
-        now,
-    );
+    // Health scoring / exclusion policy (defaults match routing `HealthScoringConfig`)
+    let health_config = HealthScoringConfig::default();
 
-    tracing::Span::current().record("stale_count", freshness_outcome.stale.len());
-    tracing::Span::current().record("fresh_count", freshness_outcome.fresh.len());
-    tracing::info!(
-        stage = "freshness_filtering",
-        fresh = freshness_outcome.fresh.len(),
-        stale = freshness_outcome.stale.len(),
-        "Applied freshness guardrails"
-    );
-
-    // Collect stale exclusion entries before partitioning
-    let mut stale_exclusion_entries: Vec<ApiExcludedVenueInfo> = freshness_outcome
-        .stale
-        .iter()
-        .map(|&idx| ApiExcludedVenueInfo {
-            venue_ref: scorer_inputs[idx].venue_ref.clone(),
-            score: 0.0,
-            signals: serde_json::json!({
-                "staleness_secs": scorer_inputs[idx]
-                    .last_updated_at
-                    .map(|ts| (now - ts).num_seconds().max(0) as u64)
-                    .unwrap_or(u64::MAX)
-            }),
-            reason: ApiExclusionReason::StaleData,
-        })
-        .collect();
-
-    // Partition candidates and scorer_inputs into fresh-only sets (Req 2.2, 6.1)
-    let fresh_candidates: Vec<DirectVenueCandidate> = freshness_outcome
-        .fresh
-        .iter()
-        .map(|&idx| candidates[idx].clone())
-        .collect();
-    let fresh_scorer_inputs: Vec<&VenueScorerInput> = freshness_outcome
-        .fresh
-        .iter()
-        .map(|&idx| &scorer_inputs[idx])
-        .collect();
-
-    // Req 2.1: if all candidates are stale (fresh list empty but candidates non-empty), reject
-    if fresh_candidates.is_empty() && !candidates.is_empty() {
-        state.cache_metrics.inc_stale_rejection(); // Req 4.1
-        return Err(ApiError::StaleMarketData {
-            stale_count: freshness_outcome.stale.len(),
-            fresh_count: 0,
-            threshold_secs_sdex: state.health_config.freshness_threshold_secs.sdex,
-            threshold_secs_amm: state.health_config.freshness_threshold_secs.amm,
-        });
-    }
-
-    // Build HealthScorer from config
     let scorer = HealthScorer {
         sdex: SdexScorer {
-            staleness_threshold_secs: state.health_config.staleness_threshold_secs,
+            staleness_threshold_secs: health_config.staleness_threshold_secs,
             max_spread: 0.05,
             target_depth_e7: 10_000_000_000,
-            depth_levels: state.health_config.depth_levels,
+            depth_levels: health_config.depth_levels,
         },
         amm: AmmScorer {
-            staleness_threshold_secs: state.health_config.staleness_threshold_secs,
-            min_tvl_threshold_e7: state.health_config.min_tvl_threshold_e7,
+            staleness_threshold_secs: health_config.staleness_threshold_secs,
+            min_tvl_threshold_e7: health_config.min_tvl_threshold_e7,
         },
     };
 
@@ -416,31 +363,9 @@ async fn find_best_price(
         .collect();
     let scored = scorer.score_venues(&fresh_inputs_owned);
 
-    tracing::Span::current().record("scored_count", scored.len());
-    tracing::info!(
-        stage = "health_scoring",
-        scored = scored.len(),
-        "Applied local health scoring"
-    );
-
-    // Build ExclusionPolicy from config
-    let override_registry = OverrideRegistry::from_entries(
-        state
-            .health_config
-            .overrides
-            .iter()
-            .map(|e| OverrideEntry {
-                venue_ref: e.venue_ref.clone(),
-                directive: e.directive.clone(),
-            })
-            .collect(),
-    );
     let policy = ExclusionPolicy {
-        thresholds: ExclusionThresholds {
-            sdex: state.health_config.thresholds.sdex,
-            amm: state.health_config.thresholds.amm,
-        },
-        overrides: override_registry,
+        thresholds: health_config.thresholds.clone(),
+        overrides: OverrideRegistry::from_entries(health_config.overrides.clone()),
     };
 
     // Apply filter (pass empty edges — we just need diagnostics for this single-hop path)
