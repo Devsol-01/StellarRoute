@@ -160,14 +160,40 @@ async fn get_quote_inner(
 
     // Try to get from cache first
     let amount_str = format!("{:.7}", amount);
-    let quote_cache_key = cache::keys::quote(&base, &quote, &amount_str, slippage_bps, quote_type, explain);
-    if let Some(cache) = &state.cache {
-        if let Ok(mut cache) = cache.try_lock() {
-            if let Some(cached) = cache.get::<QuoteResponse>(&quote_cache_key).await {
-                state.cache_metrics.inc_quote_hit();
-                tracing::Span::current().record("cache_hit", true);
-                debug!("Returning cached quote for {}/{}", base, quote);
-                return Ok(Json(cached));
+    let quote_cache_key = cache::keys::quote(
+        &base,
+        &quote,
+        &amount_str,
+        slippage_bps,
+        quote_type,
+        explain,
+    );
+
+    let state_c = state.clone();
+    let base_c = base.clone();
+    let quote_c = quote.clone();
+    let quote_cache_key_c = quote_cache_key.clone();
+
+    // Use single-flight to coalesce identical concurrent requests
+    let result_arc: Arc<crate::error::Result<QuoteResponse>> = state
+        .quote_single_flight
+        .execute(&quote_cache_key, || async move {
+            let state = state_c;
+            let base = base_c;
+            let quote = quote_c;
+            let quote_cache_key = quote_cache_key_c;
+
+            // Try to get from cache first (inside single-flight so we only compute once if miss)
+            if let Some(cache) = &state.cache {
+                if let Ok(mut cache) = cache.try_lock() {
+                    if let Some(cached) = cache.get::<QuoteResponse>(&quote_cache_key).await {
+                        state.cache_metrics.inc_quote_hit();
+                        tracing::Span::current().record("cache_hit", true);
+                        debug!("Returning cached quote for {}/{}", base, quote);
+                        // SingleFlight expects Arc<Result<QuoteResponse>>
+                        return Arc::new(Ok(cached));
+                    }
+                }
             }
 
             // For now, implement simple direct path (SDEX only)
@@ -314,13 +340,8 @@ pub async fn get_route(
         quote_asset: asset_path_to_info(&quote_asset),
         amount: format!("{:.7}", amount),
         path,
-        timestamp,
-        expires_at,
-        source_timestamp,
-        ttl_seconds,
-        rationale: if explain { Some(rationale) } else { None },
-        exclusion_diagnostics: if explain { Some(api_diagnostics) } else { None },
-        data_freshness,
+        slippage_bps,
+        timestamp: chrono::Utc::now().timestamp_millis(),
     };
 
     Ok(Json(response))

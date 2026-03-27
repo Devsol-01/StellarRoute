@@ -134,6 +134,7 @@ mod tests {
             amount: None,
             slippage_bps: None,
             quote_type: QuoteType::Sell,
+            explain: None,
         };
         assert_eq!(params.slippage_bps(), DEFAULT_SLIPPAGE_BPS);
         assert!(params.validate_slippage().is_ok());
@@ -145,6 +146,7 @@ mod tests {
             amount: None,
             slippage_bps: Some(100),
             quote_type: QuoteType::Sell,
+            explain: None,
         };
         assert_eq!(params.slippage_bps(), 100);
         assert!(params.validate_slippage().is_ok());
@@ -156,6 +158,7 @@ mod tests {
             amount: None,
             slippage_bps: Some(MAX_SLIPPAGE_BPS),
             quote_type: QuoteType::Sell,
+            explain: None,
         };
         assert_eq!(params.slippage_bps(), MAX_SLIPPAGE_BPS);
         assert!(params.validate_slippage().is_ok());
@@ -167,6 +170,7 @@ mod tests {
             amount: None,
             slippage_bps: Some(MAX_SLIPPAGE_BPS + 1),
             quote_type: QuoteType::Sell,
+            explain: None,
         };
         let result = params.validate_slippage();
         assert!(result.is_err());

@@ -9,6 +9,7 @@ import { RouteDisplay } from './RouteDisplay';
 import { SlippageControl } from './SlippageControl';
 import { SwapCTA } from './SwapCTA';
 import { SimulationPanel } from './SimulationPanel';
+import { FeeBreakdownPanel } from './FeeBreakdownPanel';
 import { useTradeFormStorage } from '@/hooks/useTradeFormStorage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -28,6 +29,8 @@ export function SwapCard() {
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const quoteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { isOnline, isOffline } = useOnlineStatus();
+  const [confidenceScore, setConfidenceScore] = useState<number>(85);
+  const [volatility, setVolatility] = useState<'high' | 'medium' | 'low'>('low');
 
   // Derived state for the button
   const isValidAmount = parseFloat(payAmount) > 0;
@@ -47,12 +50,15 @@ export function SwapCard() {
       setIsLoading(false);
       setQuoteError(null);
       setReceiveAmount('');
+      setConfidenceScore(85);
+      setVolatility('low');
       return;
     }
 
     if (!isOnline) {
       setIsLoading(false);
       setQuoteError('You are offline. Reconnect to refresh quote.');
+      setReceiveAmount('');
       return;
     }
 
@@ -61,6 +67,15 @@ export function SwapCard() {
 
     quoteTimerRef.current = setTimeout(() => {
       setReceiveAmount((amountNumber * 0.98).toFixed(4));
+      const nextConfidence = Math.max(50, Math.min(95, 90 - amountNumber / 100));
+      setConfidenceScore(Math.round(nextConfidence));
+      if (amountNumber > 1000) {
+        setVolatility('high');
+      } else if (amountNumber > 100) {
+        setVolatility('medium');
+      } else {
+        setVolatility('low');
+      }
       setIsLoading(false);
     }, 500);
   }, [clearQuoteTimer, isOnline]);
@@ -103,6 +118,8 @@ export function SwapCard() {
     setReceiveAmount('');
     setQuoteError(null);
     setIsLoading(false);
+    setConfidenceScore(85);
+    setVolatility('low');
   };
 
   // Defer render until localStorage has been read to avoid flash of default values
@@ -159,8 +176,24 @@ export function SwapCard() {
               slippage={slippage}
               isLoading={isLoading}
             />
+            <FeeBreakdownPanel
+              protocolFees={[
+                { name: 'Router Fee', amount: '0.001 XLM', description: 'Fee for using StellarRoute aggregator' },
+                { name: 'Pool Fee', amount: '0.003%', description: 'Liquidity provider fee for AQUA pool' },
+              ]}
+              networkCosts={[
+                { name: 'Base Fee', amount: '0.00001 XLM', description: 'Stellar network base transaction fee' },
+                { name: 'Operation Fee', amount: '0.00002 XLM', description: 'Fee for path payment operations' },
+              ]}
+              totalFee="0.01 XLM"
+              netOutput={`${(parseFloat(receiveAmount) * 0.99).toFixed(4)} USDC`}
+            />
             <QuoteSummary rate="1 XLM ≈ 0.98 USDC" fee="0.01 XLM" priceImpact="< 0.1%" />
-            <RouteDisplay amountOut={receiveAmount} />
+            <RouteDisplay
+              amountOut={receiveAmount}
+              confidenceScore={confidenceScore}
+              volatility={volatility}
+            />
           </>
         )}
         {quoteError && isValidAmount && (
