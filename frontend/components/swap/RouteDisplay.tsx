@@ -4,6 +4,7 @@ import { ArrowRight, ArrowDown, Info, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceIndicator } from "./ConfidenceIndicator";
+import { RouteDisplaySkeleton } from "./RouteDisplaySkeleton";
 
 interface RouteDisplayProps {
   amountOut: string;
@@ -11,14 +12,21 @@ interface RouteDisplayProps {
   confidenceScore?: number;
   /** Market volatility level */
   volatility?: "high" | "medium" | "low";
+  /** Show loading skeleton */
+  isLoading?: boolean;
 }
 
 export function RouteDisplay({
   amountOut,
   confidenceScore = 85,
   volatility = "low",
+  isLoading = false,
 }: RouteDisplayProps) {
   const [showDetails, setShowDetails] = useState(false);
+
+  if (isLoading) {
+    return <RouteDisplaySkeleton />;
+  }
 
   return (
     <div className="rounded-xl border border-border/50 p-4 space-y-4 transition-all duration-200 hover:border-border hover:shadow-sm focus-within:ring-2 focus-within:ring-primary/20">

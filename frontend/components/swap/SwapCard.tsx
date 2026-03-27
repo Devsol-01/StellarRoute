@@ -177,7 +177,7 @@ export function SwapCard() {
           onPayAmountChange={handlePayAmountChange}
           receiveAmount={receiveAmount}
         />
-        {isValidAmount && !isLoading && receiveAmount && (
+        {isValidAmount && (
           <>
             <SimulationPanel
               payAmount={payAmount}
@@ -195,13 +195,19 @@ export function SwapCard() {
                 { name: 'Operation Fee', amount: '0.00002 XLM', description: 'Fee for path payment operations' },
               ]}
               totalFee="0.01 XLM"
-              netOutput={`${(parseFloat(receiveAmount) * 0.99).toFixed(4)} USDC`}
+              netOutput={`${(parseFloat(receiveAmount || '0') * 0.99).toFixed(4)} USDC`}
             />
-            <QuoteSummary rate="1 XLM ≈ 0.98 USDC" fee="0.01 XLM" priceImpact="< 0.1%" />
+            <QuoteSummary
+              rate="1 XLM ≈ 0.98 USDC"
+              fee="0.01 XLM"
+              priceImpact="< 0.1%"
+              isLoading={isLoading}
+            />
             <RouteDisplay
               amountOut={receiveAmount}
               confidenceScore={confidenceScore}
               volatility={volatility}
+              isLoading={isLoading}
             />
           </>
         )}
