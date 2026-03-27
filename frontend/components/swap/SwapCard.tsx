@@ -38,8 +38,15 @@ export function SwapCard() {
     };
   }, []);
 
-  // Derived state for the button
-  const isValidAmount = parseFloat(payAmount) > 0;
+  const validation = SwapValidationSchema.validate(
+    {
+      amount: payAmount,
+      maxDecimals: STELLAR_NATIVE_MAX_DECIMALS,
+      slippage,
+    },
+    { mode: 'submit', requirePair: false },
+  );
+  const isValidAmount = validation.amountResult.status === 'ok';
 
   // Simulate quote fetching with confidence and volatility
   // Minimum 300ms delay before hiding skeleton to prevent flicker on fast responses
@@ -157,12 +164,12 @@ export function SwapCard() {
               volatility={volatility}
               isLoading={isLoading}
             />
+            <RouteDisplay amountOut={receiveAmount} />
           </>
         )}
         <SwapCTA
-          amount={payAmount}
+          validation={validation}
           isLoading={isLoading}
-          hasPair={true}
           onSwap={() => console.log('Swapping...')}
         />
       </CardContent>
