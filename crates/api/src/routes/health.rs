@@ -26,7 +26,7 @@ pub async fn health_check(State(state): State<Arc<AppState>>) -> impl IntoRespon
     let mut all_healthy = true;
 
     // --- PostgreSQL ---
-    let db_status = match sqlx::query("SELECT 1").execute(&state.db).await {
+    let db_status = match sqlx::query("SELECT 1").execute(state.db.read_pool()).await {
         Ok(_) => "healthy".to_string(),
         Err(e) => {
             warn!("Database health check failed: {}", e);

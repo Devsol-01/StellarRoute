@@ -18,7 +18,7 @@ use crate::{
     error::Result,
     middleware::{EndpointConfig, RateLimitLayer},
     routes,
-    state::{AppState, CachePolicy},
+    state::{AppState, CachePolicy, DatabasePools},
 };
 
 /// API server configuration
@@ -59,7 +59,7 @@ pub struct Server {
 
 impl Server {
     /// Create a new API server
-    pub async fn new(config: ServerConfig, db: PgPool) -> Self {
+    pub async fn new(config: ServerConfig, db: DatabasePools) -> Self {
         let cache_policy = CachePolicy {
             quote_ttl: std::time::Duration::from_secs(config.quote_cache_ttl_seconds),
         };

@@ -62,7 +62,7 @@ pub async fn list_pairs(State(state): State<Arc<AppState>>) -> Result<Json<Pairs
         limit 100
         "#,
     )
-    .fetch_all(&state.db)
+    .fetch_all(state.db.read_pool())
     .await
     .map_err(|e| ApiError::Database(Arc::new(e)))?;
 
