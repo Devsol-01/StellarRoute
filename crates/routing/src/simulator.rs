@@ -89,7 +89,7 @@ impl RouteSimulator {
         )?;
 
         // 4. Calculate metrics
-        let output_delta = (shocked.metrics.output_amount as i128) - (baseline.metrics.output_amount as i128);
+        let output_delta = shocked.metrics.output_amount - baseline.metrics.output_amount;
         let stability_score = if baseline.metrics.output_amount > 0 {
             (shocked.metrics.output_amount as f64) / (baseline.metrics.output_amount as f64)
         } else {

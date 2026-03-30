@@ -8,7 +8,6 @@ use crate::risk::{RiskLimitConfig, RiskValidator, RouteExclusion};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Instant;
-use tracing::instrument;
 
 /// Configuration for optimization policies
 #[derive(Clone, Debug, Serialize, Deserialize)]

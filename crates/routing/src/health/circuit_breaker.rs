@@ -44,8 +44,8 @@ pub struct VenueBreaker {
     pub last_transition_at: DateTime<Utc>,
 }
 
-impl VenueBreaker {
-    pub fn new() -> Self {
+impl Default for VenueBreaker {
+    fn default() -> Self {
         Self {
             state: BreakerState::Closed,
             consecutive_failures: 0,
@@ -53,6 +53,12 @@ impl VenueBreaker {
             last_failure_at: None,
             last_transition_at: Utc::now(),
         }
+    }
+}
+
+impl VenueBreaker {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn record_failure(&mut self, config: &BreakerConfig) {
@@ -68,10 +74,9 @@ impl VenueBreaker {
                 }
             }
             BreakerState::HalfOpen => {
-                // Any failure in HalfOpen trips it back to Open immediately
                 self.transition_to(BreakerState::Open);
             }
-            BreakerState::Open => {} // Already open
+            BreakerState::Open => {}
         }
     }
 
@@ -85,11 +90,8 @@ impl VenueBreaker {
                     self.transition_to(BreakerState::Closed);
                 }
             }
-            BreakerState::Open => {
-                // Successes while open shouldn't happen if we're excluding, 
-                // but if they do (manual probes), we might want to track them.
-            }
-            BreakerState::Closed => {} // Stays closed
+            BreakerState::Open => {}
+            BreakerState::Closed => {}
         }
     }
 

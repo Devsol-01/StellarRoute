@@ -76,19 +76,10 @@ impl AssetRiskLimit {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RiskLimitConfig {
     pub global_defaults: AssetRiskLimit,
     pub per_asset: HashMap<String, AssetRiskLimit>,
-}
-
-impl Default for RiskLimitConfig {
-    fn default() -> Self {
-        Self {
-            global_defaults: AssetRiskLimit::default(),
-            per_asset: HashMap::new(),
-        }
-    }
 }
 
 impl RiskLimitConfig {
