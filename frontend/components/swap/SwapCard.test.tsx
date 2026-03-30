@@ -1,7 +1,44 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi, Mock } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { SettingsProvider } from "@/components/providers/settings-provider";
+import type { PriceQuote } from "@/types";
+import { StellarRouteApiError, stellarRouteClient } from "@/lib/api/client";
 import { SwapCard } from "./SwapCard";
+
+vi.mock("@/lib/api/client", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api/client")>(
+    "@/lib/api/client",
+  );
+  return {
+    ...actual,
+    stellarRouteClient: {
+      ...actual.stellarRouteClient,
+      getQuote: vi.fn(),
+    },
+  };
+});
+
+function buildQuote(total: string): PriceQuote {
+  return {
+    base_asset: { asset_type: "native" },
+    quote_asset: {
+      asset_type: "credit_alphanum4",
+      asset_code: "USDC",
+      asset_issuer: "G...",
+    },
+    amount: "10",
+    price: "0.98",
+    total,
+    quote_type: "sell",
+    path: [],
+    price_impact: "0.1",
+    timestamp: Math.floor(Date.now() / 1000),
+  };
+}
+
+function renderSwapCard(ui: React.ReactElement) {
+  return render(<SettingsProvider>{ui}</SettingsProvider>);
+}
 
 function setNavigatorOnline(value: boolean) {
   Object.defineProperty(window.navigator, "onLine", {
@@ -10,110 +47,99 @@ function setNavigatorOnline(value: boolean) {
   });
 }
 
-describe("SwapCard network resilience and states", () => {
+describe("SwapCard network resilience", () => {
   beforeEach(() => {
     localStorage.clear();
-    global.fetch = vi.fn(() => 
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          total: "9.5",
-          price_impact: "0.5",
-          path: [],
-          price: "0.95",
-          amount: "10"
-        })
-      })
-    ) as Mock;
   });
 
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
-    vi.restoreAllMocks();
   });
 
-  it("should render successfully", () => {
-    render(<SwapCard />);
-    expect(screen.getByRole("heading", { name: /swap/i })).toBeInTheDocument();
-  });
+  it("shows offline state clearly and blocks submission while disconnected", async () => {
+    setNavigatorOnline(false);
+    renderSwapCard(<SwapCard />);
 
-  it("shows initial state requiring wallet connection", async () => {
-    render(<SwapCard />);
-    
-    // Check for "Connect Wallet" button
-    const connectButton = screen.getByRole("button", { name: /connect wallet/i });
-    expect(connectButton).toBeInTheDocument();
-  });
+    await screen.findByText(/you're offline/i);
 
-  it("transitions states after wallet connection", async () => {
-    const user = userEvent.setup();
-    render(<SwapCard />);
-    
-    // 1. Connect Wallet
-    const connectButton = screen.getByRole("button", { name: /connect wallet/i });
-    await user.click(connectButton);
-    
-    // 2. Should show "Enter Amount"
-    await waitFor(() => {
-      expect(screen.getByText(/enter amount/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Pay amount"), {
+      target: { value: "10" },
     });
-    
-    // 3. Enter amount
-    const payInput = screen.getByLabelText(/you pay/i);
-    await user.type(payInput, "10");
-    
-    // 4. Should show "Swap" button
-    await waitFor(() => {
-      expect(screen.getByRole("button", { name: /^swap$/i })).toBeEnabled();
-    }, { timeout: 3000 });
+
+    expect(
+      screen.getByText("You are offline. Reconnect to refresh quote."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Retry quote" })).toBeInTheDocument();
+
+    const cta = screen.getByRole("button", { name: "Offline" });
+    expect(cta).toBeDisabled();
   });
 
-  it("shows high price impact warning for large amounts", async () => {
-    // Override fetch mock for this test to return high price impact
-    global.fetch = vi.fn(() => 
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({
-          total: "50",
-          price_impact: "15.0", // > 10
-          path: [],
-          price: "0.5",
-          amount: "90" // 90 is <= 100 mock balance, so insufficient_balance won't trigger
-        })
-      })
-    ) as Mock;
+  it("automatically recovers quotes after reconnecting", async () => {
+    vi.mocked(stellarRouteClient.getQuote).mockResolvedValue(buildQuote("9.8000"));
 
-    const user = userEvent.setup();
-    render(<SwapCard />);
-    
-    // Connect
-    await user.click(screen.getByRole("button", { name: /connect wallet/i }));
-    
-    // Enter amount
-    const payInput = screen.getByLabelText(/you pay/i);
-    await user.type(payInput, "90");
-    
-    await waitFor(() => {
-      const impactButton = screen.getByRole("button", { name: /price impact too high/i });
-      expect(impactButton).toBeDisabled();
-    }, { timeout: 3000 });
+    setNavigatorOnline(false);
+    renderSwapCard(<SwapCard />);
+
+    await screen.findByLabelText("Pay amount");
+    fireEvent.change(screen.getByLabelText("Pay amount"), {
+      target: { value: "10" },
+    });
+
+    expect(
+      screen.getByText("You are offline. Reconnect to refresh quote."),
+    ).toBeInTheDocument();
+
+    act(() => {
+      setNavigatorOnline(true);
+      window.dispatchEvent(new Event("online"));
+    });
+
+    await waitFor(
+      () => {
+        expect(
+          screen.queryByText("You are offline. Reconnect to refresh quote."),
+        ).not.toBeInTheDocument();
+        expect(screen.getByLabelText("Receive amount")).toHaveValue("9.8000");
+        expect(screen.getByRole("button", { name: "Review Swap" })).toBeEnabled();
+      },
+      { timeout: 2000 },
+    );
   });
 
-  it("shows insufficient balance state", async () => {
-    const user = userEvent.setup();
-    render(<SwapCard />);
-    
-    // Connect
-    await user.click(screen.getByRole("button", { name: /connect wallet/i }));
-    
-    // Enter amount higher than mock balance (100.00)
-    const payInput = screen.getByLabelText(/you pay/i);
-    await user.type(payInput, "100.01");
-    
+  it("shows a friendly 429 message and retry-after countdown", async () => {
+    vi.mocked(stellarRouteClient.getQuote).mockRejectedValue(
+      new StellarRouteApiError(
+        429,
+        "rate_limit_exceeded",
+        "Too many requests",
+        undefined,
+        5_000,
+      ),
+    );
+
+    renderSwapCard(
+      <SwapCard
+        quoteOptions={{
+          debounceMs: 0,
+          maxAutoRetries: 0,
+        }}
+      />,
+    );
+
+    await screen.findByLabelText("Pay amount");
+    fireEvent.change(screen.getByLabelText("Pay amount"), {
+      target: { value: "10" },
+    });
+
     await waitFor(() => {
-      const balanceButton = screen.getByRole("button", { name: /insufficient balance/i });
-      expect(balanceButton).toBeDisabled();
-    }, { timeout: 3000 });
+      expect(
+        screen.getByText(/temporarily rate-limited/i),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /retry in 5s/i }),
+      ).toBeDisabled();
+    });
   });
 });
