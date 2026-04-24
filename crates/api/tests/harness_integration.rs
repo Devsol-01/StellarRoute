@@ -70,7 +70,7 @@ async fn test_harness_mixed_traffic_profile() {
                 .body(Body::empty())
                 .unwrap();
 
-            let response = router.oneshot(request).await.map_err(|e| e.to_string())?;
+            let response = (*router).clone().oneshot(request).await.map_err(|e| e.to_string())?;
             
             if response.status() == StatusCode::OK || response.status() == StatusCode::NOT_FOUND {
                 Ok(())
@@ -135,7 +135,7 @@ async fn test_harness_degradation_scenario() {
                 .body(Body::empty())
                 .unwrap();
 
-            let response = router.oneshot(request).await.map_err(|e| e.to_string())?;
+            let response = (*router).clone().oneshot(request).await.map_err(|e| e.to_string())?;
             if response.status() == StatusCode::OK || response.status() == StatusCode::NOT_FOUND {
                 Ok(())
             } else {
